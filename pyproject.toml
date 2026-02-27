@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "paper-millenialifier"
+version = "0.1.0"
+description = "Translate research papers into millennial speak"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.39.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "httpx>=0.27.0",
+    "pymupdf>=1.24.0",
+    "beautifulsoup4>=4.12.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "python-multipart>=0.0.9",
+    "jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[project.scripts]
+millenialify = "millenialifier.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/millenialifier"]
