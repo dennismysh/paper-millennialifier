@@ -414,7 +414,7 @@
 
             // Pick first available provider as default, fall back to first overall
             const firstAvailable = providersData.find(p => p.available) || providersData[0];
-            selectedProvider = firstAvailable?.name || 'claude';
+            selectedProvider = firstAvailable?.name || 'gemini';
 
             // Build provider pill buttons
             pillsContainer.innerHTML = '';

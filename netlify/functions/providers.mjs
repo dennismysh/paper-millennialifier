@@ -8,20 +8,6 @@
 
 const PROVIDERS = [
   {
-    name: "claude",
-    description: "Anthropic Claude",
-    default_model: "claude-sonnet-4-20250514",
-    free: false,
-    keyEnv: "ANTHROPIC_API_KEY",
-  },
-  {
-    name: "openai",
-    description: "OpenAI (GPT-4o, etc.)",
-    default_model: "gpt-4o",
-    free: false,
-    keyEnv: "OPENAI_API_KEY",
-  },
-  {
     name: "gemini",
     description: "Google Gemini \u2014 generous free tier",
     default_model: "gemini-2.0-flash",
@@ -41,6 +27,20 @@ const PROVIDERS = [
     default_model: "meta-llama/llama-3.3-70b-instruct:free",
     free: true,
     keyEnv: "OPENROUTER_API_KEY",
+  },
+  {
+    name: "claude",
+    description: "Anthropic Claude",
+    default_model: "claude-sonnet-4-20250514",
+    free: false,
+    keyEnv: "ANTHROPIC_API_KEY",
+  },
+  {
+    name: "openai",
+    description: "OpenAI (GPT-4o, etc.)",
+    default_model: "gpt-4o",
+    free: false,
+    keyEnv: "OPENAI_API_KEY",
   },
 ];
 
