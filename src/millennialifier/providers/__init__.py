@@ -27,7 +27,7 @@ class ProviderInfo:
     description: str
     default_model: str
     free: bool
-    api_key_env: str | None  # None means no key needed
+    api_key_env: str | list[str] | None  # None means no key needed
 
 
 PROVIDER_INFO: dict[str, ProviderInfo] = {
@@ -50,7 +50,7 @@ PROVIDER_INFO: dict[str, ProviderInfo] = {
         description="Google Gemini — generous free tier",
         default_model="gemini-2.0-flash",
         free=True,
-        api_key_env="GOOGLE_API_KEY",
+        api_key_env=["GOOGLE_API_KEY", "GEMINI_API_KEY"],
     ),
     "groq": ProviderInfo(
         name="groq",
@@ -95,9 +95,11 @@ def check_provider_configured(name: str) -> None:
         return  # Ollama — no key needed
     import os
 
-    if not os.environ.get(info.api_key_env):
+    env_vars = info.api_key_env if isinstance(info.api_key_env, list) else [info.api_key_env]
+    if not any(os.environ.get(var) for var in env_vars):
+        names = " or ".join(env_vars)
         raise ProviderNotConfiguredError(
-            f"Provider '{info.name}' requires the {info.api_key_env} environment variable, "
+            f"Provider '{info.name}' requires the {names} environment variable, "
             f"but it is not set. Please set it before using this provider."
         )
 
