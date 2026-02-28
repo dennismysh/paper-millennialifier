@@ -137,7 +137,7 @@ async function* streamOpenAICompat(
 }
 
 async function* streamGemini(systemPrompt, userPrompt, model) {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
   const genModel = genAI.getGenerativeModel({
     model: model || "gemini-2.0-flash",
     systemInstruction: systemPrompt,
@@ -169,7 +169,8 @@ const PROVIDERS = {
   },
   gemini: {
     getStream: (sys, usr, model) => streamGemini(sys, usr, model),
-    keyEnv: "GOOGLE_API_KEY",
+    keyEnv: "GEMINI_API_KEY",
+    altKeyEnv: "GOOGLE_API_KEY",
   },
   groq: {
     getStream: (sys, usr, model) =>
@@ -232,7 +233,9 @@ export default async (request) => {
     );
   }
 
-  if (providerConfig.keyEnv && !process.env[providerConfig.keyEnv]) {
+  const hasKey = process.env[providerConfig.keyEnv] ||
+    (providerConfig.altKeyEnv && process.env[providerConfig.altKeyEnv]);
+  if (providerConfig.keyEnv && !hasKey) {
     return Response.json(
       {
         error: `Missing API key: ${providerConfig.keyEnv}. Add it in your Netlify site settings under Environment Variables. Providers like Claude and OpenAI may be available via Netlify AI inference without manual configuration.`,
