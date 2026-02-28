@@ -1,9 +1,7 @@
 /**
  * Netlify Function: Return available LLM providers and their metadata.
  *
- * Checks which API keys are configured (either via Netlify AI inference
- * or manually set env vars) and marks providers as available/unavailable
- * so the frontend can guide users accordingly.
+ * This app exclusively uses Google Gemini (gemini-2.0-flash) for translation.
  */
 
 const PROVIDERS = [
@@ -14,34 +12,6 @@ const PROVIDERS = [
     free: true,
     keyEnv: "GEMINI_API_KEY",
     altKeyEnv: "GOOGLE_API_KEY",
-  },
-  {
-    name: "groq",
-    description: "Groq \u2014 fast inference, free tier (Llama 3.3, Mixtral)",
-    default_model: "llama-3.3-70b-versatile",
-    free: true,
-    keyEnv: "GROQ_API_KEY",
-  },
-  {
-    name: "openrouter",
-    description: "OpenRouter \u2014 model aggregator with free options",
-    default_model: "meta-llama/llama-3.3-70b-instruct:free",
-    free: true,
-    keyEnv: "OPENROUTER_API_KEY",
-  },
-  {
-    name: "claude",
-    description: "Anthropic Claude",
-    default_model: "claude-sonnet-4-20250514",
-    free: false,
-    keyEnv: "ANTHROPIC_API_KEY",
-  },
-  {
-    name: "openai",
-    description: "OpenAI (GPT-4o, etc.)",
-    default_model: "gpt-4o",
-    free: false,
-    keyEnv: "OPENAI_API_KEY",
   },
 ];
 
