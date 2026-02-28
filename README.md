@@ -19,25 +19,25 @@ Requires **Python 3.10+**.
 
 ```bash
 # Basic install
-pip install paper-millenialifier
+pip install paper-millennialifier
 
 # With a specific LLM provider
-pip install paper-millenialifier[claude]
-pip install paper-millenialifier[openai]
-pip install paper-millenialifier[gemini]
+pip install paper-millennialifier[claude]
+pip install paper-millennialifier[openai]
+pip install paper-millennialifier[gemini]
 
 # With all providers
-pip install paper-millenialifier[all-providers]
+pip install paper-millennialifier[all-providers]
 
 # Free-tier providers only (Gemini + OpenAI-compat providers)
-pip install paper-millenialifier[free]
+pip install paper-millennialifier[free]
 ```
 
 For development:
 
 ```bash
-git clone https://github.com/dennismysh/paper-millenialifier.git
-cd paper-millenialifier
+git clone https://github.com/dennismysh/paper-millennialifier.git
+cd paper-millennialifier
 pip install -e ".[dev,all-providers]"
 ```
 
