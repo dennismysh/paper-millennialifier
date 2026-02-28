@@ -12,7 +12,8 @@ const PROVIDERS = [
     description: "Google Gemini \u2014 generous free tier",
     default_model: "gemini-2.0-flash",
     free: true,
-    keyEnv: "GOOGLE_API_KEY",
+    keyEnv: "GEMINI_API_KEY",
+    altKeyEnv: "GOOGLE_API_KEY",
   },
   {
     name: "groq",
@@ -45,9 +46,9 @@ const PROVIDERS = [
 ];
 
 export default async (request) => {
-  const providers = PROVIDERS.map(({ keyEnv, ...provider }) => ({
+  const providers = PROVIDERS.map(({ keyEnv, altKeyEnv, ...provider }) => ({
     ...provider,
-    available: !!process.env[keyEnv],
+    available: !!process.env[keyEnv] || (altKeyEnv && !!process.env[altKeyEnv]),
     keyEnv,
   }));
   return Response.json(providers);
