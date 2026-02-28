@@ -9,7 +9,14 @@ from dataclasses import dataclass
 
 from millennialifier.providers.base import LLMProvider, Message
 
-__all__ = ["LLMProvider", "Message", "get_provider", "list_providers", "PROVIDER_INFO"]
+__all__ = [
+    "LLMProvider",
+    "Message",
+    "get_provider",
+    "check_provider_configured",
+    "list_providers",
+    "PROVIDER_INFO",
+]
 
 
 @dataclass
@@ -69,11 +76,40 @@ PROVIDER_INFO: dict[str, ProviderInfo] = {
 }
 
 
+class ProviderNotConfiguredError(Exception):
+    """Raised when a provider's API key is not set."""
+
+
+def check_provider_configured(name: str) -> None:
+    """Raise ``ProviderNotConfiguredError`` if the provider's API key isn't set.
+
+    Call this *before* instantiating the provider so the user gets a clear
+    message instead of a cryptic SDK auth failure.
+    """
+    info = PROVIDER_INFO.get(name)
+    if info is None:
+        raise ValueError(
+            f"Unknown provider '{name}'. Available: {', '.join(PROVIDER_INFO.keys())}"
+        )
+    if info.api_key_env is None:
+        return  # Ollama — no key needed
+    import os
+
+    if not os.environ.get(info.api_key_env):
+        raise ProviderNotConfiguredError(
+            f"Provider '{info.name}' requires the {info.api_key_env} environment variable, "
+            f"but it is not set. Please set it before using this provider."
+        )
+
+
 def get_provider(name: str) -> LLMProvider:
     """Instantiate a provider by name.
 
-    Raises ImportError with a helpful message if the required SDK isn't installed.
+    Raises ``ProviderNotConfiguredError`` if the required API key isn't set,
+    or ``ImportError`` if the required SDK isn't installed.
     """
+    check_provider_configured(name)
+
     if name == "claude":
         try:
             from millennialifier.providers.anthropic import AnthropicProvider

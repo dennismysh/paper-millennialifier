@@ -14,7 +14,11 @@ from millennialifier.models import ToneLevel
 from millennialifier.parsers.fetcher import fetch_paper
 from millennialifier.parsers.html import HtmlParser
 from millennialifier.parsers.pdf import PdfParser
-from millennialifier.providers import PROVIDER_INFO
+from millennialifier.providers import (
+    PROVIDER_INFO,
+    ProviderNotConfiguredError,
+    check_provider_configured,
+)
 from millennialifier.translator import translate_section_stream
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
@@ -61,6 +65,19 @@ async def translate(
     tone_level = ToneLevel(tone)
     model_override = model if model else None
 
+    # Validate API key before doing any work
+    try:
+        check_provider_configured(provider)
+    except (ProviderNotConfiguredError, ValueError) as exc:
+        return StreamingResponse(
+            _error_stream(str(exc)),
+            media_type="text/event-stream",
+        )
+
+    # Resolve which model will actually be used
+    provider_info = PROVIDER_INFO.get(provider)
+    active_model = model_override or (provider_info.default_model if provider_info else "unknown")
+
     # Parse the paper from URL or uploaded file
     if file and file.filename:
         data = await file.read()
@@ -78,13 +95,15 @@ async def translate(
         )
 
     async def event_stream():
-        # Send paper metadata
+        # Send paper metadata + provider info
         yield _sse(
             "meta",
             {
                 "title": paper.title,
                 "authors": paper.authors,
                 "section_count": len(paper.all_sections()),
+                "provider": provider,
+                "model": active_model,
             },
         )
 
