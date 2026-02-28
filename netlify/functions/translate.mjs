@@ -197,6 +197,48 @@ const PROVIDERS = {
 };
 
 // ---------------------------------------------------------------------------
+// Friendly error messages
+// ---------------------------------------------------------------------------
+
+const KEY_ENV_NAMES = {
+  claude: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  gemini: "GEMINI_API_KEY or GOOGLE_API_KEY",
+  groq: "GROQ_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+};
+
+function friendlyError(provider, err) {
+  const raw = (err.message || "").toLowerCase();
+  const envHint = KEY_ENV_NAMES[provider] ? ` (${KEY_ENV_NAMES[provider]})` : "";
+
+  if (
+    raw.includes("api key not valid") ||
+    raw.includes("invalid api key") ||
+    raw.includes("unauthorized") ||
+    raw.includes("401")
+  ) {
+    return (
+      `Your ${provider} API key${envHint} is invalid. ` +
+      "Please double-check the key in your Netlify site environment variables."
+    );
+  }
+  if (raw.includes("quota") || raw.includes("rate limit") || raw.includes("429")) {
+    return (
+      `Rate limit or quota exceeded for ${provider}. ` +
+      "Please wait a moment and try again, or switch to another provider."
+    );
+  }
+  if (raw.includes("not found") || raw.includes("404")) {
+    return (
+      `The requested model was not found on ${provider}. ` +
+      "Please check the model name or leave it blank for the default."
+    );
+  }
+  return `Error from ${provider}: ${err.message}`;
+}
+
+// ---------------------------------------------------------------------------
 // Netlify Function handler
 // ---------------------------------------------------------------------------
 
@@ -268,7 +310,7 @@ export default async (request) => {
       await writeSSE("done", {});
     } catch (err) {
       console.error("Translation error:", err);
-      await writeSSE("error", { message: err.message });
+      await writeSSE("error", { message: friendlyError(provider, err) });
     } finally {
       await writer.close();
     }
