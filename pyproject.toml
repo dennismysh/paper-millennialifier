@@ -20,21 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# LLM providers — install only what you need
-claude = ["anthropic>=0.39.0"]
-openai = ["openai>=1.50.0"]
 gemini = ["google-genai>=1.0.0"]
-# Groq, OpenRouter, and Ollama all use the OpenAI SDK
-groq = ["openai>=1.50.0"]
-openrouter = ["openai>=1.50.0"]
-ollama = ["openai>=1.50.0"]
-# Convenience bundles
-all-providers = [
-    "anthropic>=0.39.0",
-    "openai>=1.50.0",
-    "google-genai>=1.0.0",
-]
-free = ["openai>=1.50.0", "google-genai>=1.0.0"]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",

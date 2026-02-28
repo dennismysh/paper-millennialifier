@@ -110,67 +110,6 @@
             flex: 1;
         }
 
-        .field-group {
-            margin-bottom: 1rem;
-        }
-
-        .field-group label {
-            display: block;
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            margin-bottom: 0.5rem;
-        }
-
-        .provider-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .provider-pill {
-            padding: 0.4rem 0.8rem;
-            background: var(--bg);
-            border: 1px solid var(--accent2);
-            border-radius: 20px;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .provider-pill:hover {
-            border-color: var(--accent);
-            color: var(--text);
-        }
-
-        .provider-pill.active {
-            background: var(--accent2);
-            border-color: var(--accent);
-            color: var(--text);
-        }
-
-        .provider-pill .free-badge {
-            font-size: 0.65rem;
-            background: #2d6a4f;
-            color: #b7e4c7;
-            padding: 0.1rem 0.35rem;
-            border-radius: 8px;
-            margin-left: 0.3rem;
-            vertical-align: middle;
-        }
-
-        .model-input {
-            font-size: 0.85rem;
-            padding: 0.5rem 0.75rem;
-        }
-
-        .model-hint {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-top: 0.25rem;
-        }
-
         .tone-group {
             margin-bottom: 1rem;
         }
@@ -310,21 +249,6 @@
                     <input type="file" name="file" id="file-input" accept=".pdf,.html,.htm">
                 </div>
 
-                <div class="field-group">
-                    <label>LLM Provider</label>
-                    <div class="provider-pills" id="provider-pills">
-                        <button type="button" class="provider-pill active" data-provider="gemini">Gemini <span class="free-badge">FREE</span></button>
-                        <button type="button" class="provider-pill" data-provider="groq">Groq <span class="free-badge">FREE</span></button>
-                        <button type="button" class="provider-pill" data-provider="openrouter">OpenRouter <span class="free-badge">FREE</span></button>
-                        <button type="button" class="provider-pill" data-provider="claude">Claude</button>
-                        <button type="button" class="provider-pill" data-provider="openai">OpenAI</button>
-                        <button type="button" class="provider-pill" data-provider="ollama">Ollama <span class="free-badge">FREE</span></button>
-                    </div>
-                    <input type="text" name="model" id="model-input" class="model-input"
-                           placeholder="Model override (leave blank for default)">
-                    <div class="model-hint" id="model-hint">Default: gemini-2.0-flash</div>
-                </div>
-
                 <div class="tone-group">
                     <label>Millennial Intensity</label>
                     <div class="tone-value" id="tone-display">Balanced</div>
@@ -354,16 +278,6 @@
 
     <script>
         const TONE_NAMES = { 1: 'Light', 2: 'Moderate', 3: 'Balanced', 4: 'Heavy', 5: 'UNHINGED' };
-        const DEFAULT_MODELS = {
-            claude: 'claude-sonnet-4-20250514',
-            openai: 'gpt-4o',
-            gemini: 'gemini-2.0-flash',
-            groq: 'llama-3.3-70b-versatile',
-            openrouter: 'meta-llama/llama-3.3-70b-instruct:free',
-            ollama: 'llama3.1',
-        };
-
-        let selectedProvider = 'gemini';
 
         // Tabs
         document.querySelectorAll('.tab').forEach(tab => {
@@ -372,18 +286,6 @@
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
-            });
-        });
-
-        // Provider pills
-        document.querySelectorAll('.provider-pill').forEach(pill => {
-            pill.addEventListener('click', () => {
-                document.querySelectorAll('.provider-pill').forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                selectedProvider = pill.dataset.provider;
-                document.getElementById('model-hint').textContent =
-                    'Default: ' + DEFAULT_MODELS[selectedProvider];
-                document.getElementById('model-input').value = '';
             });
         });
 
@@ -412,8 +314,6 @@
             }
 
             form.append('tone', toneSlider.value);
-            form.append('provider', selectedProvider);
-            form.append('model', document.getElementById('model-input').value.trim());
 
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;

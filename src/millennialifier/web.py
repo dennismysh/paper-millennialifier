@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -20,6 +20,9 @@ from millennialifier.providers import (
     check_provider_configured,
 )
 from millennialifier.translator import translate_section_stream
+
+_PROVIDER = "gemini"
+_MODEL = "gemini-2.0-flash"
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _TEMPLATES = _ROOT / "templates"
@@ -35,48 +38,27 @@ async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/api/providers")
-async def api_providers() -> JSONResponse:
-    """Return available providers and their metadata."""
-    return JSONResponse([
-        {
-            "name": info.name,
-            "description": info.description,
-            "default_model": info.default_model,
-            "free": info.free,
-        }
-        for info in PROVIDER_INFO.values()
-    ])
-
-
 @app.post("/translate")
 async def translate(
     request: Request,
     url: str = Form(default=""),
     file: UploadFile | None = None,
     tone: int = Form(default=3),
-    provider: str = Form(default="claude"),
-    model: str = Form(default=""),
 ) -> StreamingResponse:
     """Parse a paper and stream the millennial-ified translation back.
 
     Sends server-sent events (SSE) so the frontend can render progressively.
     """
     tone_level = ToneLevel(tone)
-    model_override = model if model else None
 
     # Validate API key before doing any work
     try:
-        check_provider_configured(provider)
+        check_provider_configured(_PROVIDER)
     except (ProviderNotConfiguredError, ValueError) as exc:
         return StreamingResponse(
             _error_stream(str(exc)),
             media_type="text/event-stream",
         )
-
-    # Resolve which model will actually be used
-    provider_info = PROVIDER_INFO.get(provider)
-    active_model = model_override or (provider_info.default_model if provider_info else "unknown")
 
     # Parse the paper from URL or uploaded file
     if file and file.filename:
@@ -102,8 +84,8 @@ async def translate(
                 "title": paper.title,
                 "authors": paper.authors,
                 "section_count": len(paper.all_sections()),
-                "provider": provider,
-                "model": active_model,
+                "provider": _PROVIDER,
+                "model": _MODEL,
             },
         )
 
@@ -114,14 +96,13 @@ async def translate(
                 async for chunk in translate_section_stream(
                     section,
                     tone=tone_level,
-                    model=model_override,
-                    provider_name=provider,
+                    provider_name=_PROVIDER,
                 ):
                     yield _sse("chunk", {"index": i, "text": chunk})
 
                 yield _sse("section_done", {"index": i, "heading": section.heading})
         except Exception as exc:
-            yield _sse("error", {"message": _friendly_error(provider, exc)})
+            yield _sse("error", {"message": _friendly_error(_PROVIDER, exc)})
             return
 
         yield _sse("done", {})
@@ -156,7 +137,7 @@ def _friendly_error(provider_name: str, exc: Exception) -> str:
     if "quota" in raw or "rate limit" in raw or "429" in raw:
         return (
             f"Rate limit or quota exceeded for {provider_name}. "
-            "Please wait a moment and try again, or switch to another provider."
+            "Please wait a moment and try again."
         )
     if "not found" in raw or "404" in raw:
         return (
