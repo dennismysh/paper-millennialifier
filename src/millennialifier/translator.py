@@ -9,7 +9,7 @@ from millennialifier.prompts import build_section_prompt, build_system_prompt
 from millennialifier.providers import LLMProvider, Message, get_provider
 
 
-DEFAULT_PROVIDER = "claude"
+DEFAULT_PROVIDER = "gemini"
 
 
 def _resolve_provider(
