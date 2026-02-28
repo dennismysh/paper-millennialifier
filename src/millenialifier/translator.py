@@ -1,80 +1,85 @@
-"""Translation engine — sends paper sections to Claude for millennial-ification."""
+"""Translation engine — sends paper sections to an LLM for millennial-ification."""
 
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-import anthropic
-
 from millenialifier.models import Paper, Section, ToneLevel
 from millenialifier.prompts import build_section_prompt, build_system_prompt
+from millenialifier.providers import LLMProvider, Message, get_provider
 
-DEFAULT_MODEL = "claude-sonnet-4-20250514"
+
+DEFAULT_PROVIDER = "claude"
+
+
+def _resolve_provider(
+    provider: LLMProvider | None = None,
+    provider_name: str | None = None,
+) -> LLMProvider:
+    """Get a provider instance — use the one passed in, or create from name."""
+    if provider is not None:
+        return provider
+    return get_provider(provider_name or DEFAULT_PROVIDER)
 
 
 async def translate_section(
     section: Section,
     tone: ToneLevel = ToneLevel.BALANCED,
-    model: str = DEFAULT_MODEL,
-    client: anthropic.AsyncAnthropic | None = None,
+    model: str | None = None,
+    provider: LLMProvider | None = None,
+    provider_name: str | None = None,
 ) -> str:
     """Translate a single paper section.
 
     Args:
         section: The section to translate.
         tone: Millennial intensity level (1-5).
-        model: Claude model ID to use.
-        client: Optional pre-configured client.
+        model: Model ID override (uses provider default if None).
+        provider: A pre-configured LLMProvider instance.
+        provider_name: Provider name to instantiate (ignored if provider given).
 
     Returns:
         The translated section text.
     """
-    if client is None:
-        client = anthropic.AsyncAnthropic()
-
+    llm = _resolve_provider(provider, provider_name)
     system_prompt = build_system_prompt(tone)
     user_prompt = build_section_prompt(section.heading, section.content)
 
-    message = await client.messages.create(
-        model=model,
-        max_tokens=4096,
+    return await llm.complete(
         system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
+        messages=[Message(role="user", content=user_prompt)],
+        model=model,
     )
-
-    return message.content[0].text
 
 
 async def translate_section_stream(
     section: Section,
     tone: ToneLevel = ToneLevel.BALANCED,
-    model: str = DEFAULT_MODEL,
-    client: anthropic.AsyncAnthropic | None = None,
+    model: str | None = None,
+    provider: LLMProvider | None = None,
+    provider_name: str | None = None,
 ) -> AsyncIterator[str]:
     """Translate a single section with streaming output.
 
     Yields text chunks as they arrive.
     """
-    if client is None:
-        client = anthropic.AsyncAnthropic()
-
+    llm = _resolve_provider(provider, provider_name)
     system_prompt = build_system_prompt(tone)
     user_prompt = build_section_prompt(section.heading, section.content)
 
-    async with client.messages.stream(
-        model=model,
-        max_tokens=4096,
+    async for chunk in llm.stream(
         system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    ) as stream:
-        async for text in stream.text_stream:
-            yield text
+        messages=[Message(role="user", content=user_prompt)],
+        model=model,
+    ):
+        yield chunk
 
 
 async def translate_paper(
     paper: Paper,
     tone: ToneLevel = ToneLevel.BALANCED,
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
+    provider_name: str | None = None,
     on_section_start: callable | None = None,
     on_section_done: callable | None = None,
 ) -> Paper:
@@ -85,14 +90,15 @@ async def translate_paper(
     Args:
         paper: The parsed paper.
         tone: Millennial intensity level.
-        model: Claude model ID.
+        model: Model ID override.
+        provider_name: Which LLM provider to use.
         on_section_start: Callback(section_index, heading) called before each section.
         on_section_done: Callback(section_index, heading) called after each section.
 
     Returns:
         The same Paper object with translated fields populated.
     """
-    client = anthropic.AsyncAnthropic()
+    llm = _resolve_provider(provider_name=provider_name)
     all_sections = paper.all_sections()
 
     for i, section in enumerate(all_sections):
@@ -100,7 +106,7 @@ async def translate_paper(
             on_section_start(i, section.heading)
 
         translated = await translate_section(
-            section, tone=tone, model=model, client=client
+            section, tone=tone, model=model, provider=llm
         )
         section.translated = translated
 

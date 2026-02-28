@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -14,6 +14,7 @@ from millenialifier.models import ToneLevel
 from millenialifier.parsers.fetcher import fetch_paper
 from millenialifier.parsers.html import HtmlParser
 from millenialifier.parsers.pdf import PdfParser
+from millenialifier.providers import PROVIDER_INFO
 from millenialifier.translator import translate_section_stream
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
@@ -30,18 +31,35 @@ async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/api/providers")
+async def api_providers() -> JSONResponse:
+    """Return available providers and their metadata."""
+    return JSONResponse([
+        {
+            "name": info.name,
+            "description": info.description,
+            "default_model": info.default_model,
+            "free": info.free,
+        }
+        for info in PROVIDER_INFO.values()
+    ])
+
+
 @app.post("/translate")
 async def translate(
     request: Request,
     url: str = Form(default=""),
     file: UploadFile | None = None,
     tone: int = Form(default=3),
+    provider: str = Form(default="claude"),
+    model: str = Form(default=""),
 ) -> StreamingResponse:
     """Parse a paper and stream the millennial-ified translation back.
 
     Sends server-sent events (SSE) so the frontend can render progressively.
     """
     tone_level = ToneLevel(tone)
+    model_override = model if model else None
 
     # Parse the paper from URL or uploaded file
     if file and file.filename:
@@ -74,7 +92,10 @@ async def translate(
             yield _sse("section_start", {"index": i, "heading": section.heading})
 
             async for chunk in translate_section_stream(
-                section, tone=tone_level
+                section,
+                tone=tone_level,
+                model=model_override,
+                provider_name=provider,
             ):
                 yield _sse("chunk", {"index": i, "text": chunk})
 
