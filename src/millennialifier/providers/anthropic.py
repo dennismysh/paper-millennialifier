@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncIterator
 
-from millenialifier.providers.base import LLMProvider, Message
+from millennialifier.providers.base import LLMProvider, Message
 
 
 class AnthropicProvider(LLMProvider):

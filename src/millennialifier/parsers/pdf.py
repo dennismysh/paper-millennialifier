@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pymupdf
 
-from millenialifier.models import Paper, Section
+from millennialifier.models import Paper, Section
 
 
 # Common section headings in research papers

@@ -41,7 +41,7 @@ dev = [
 ]
 
 [project.scripts]
-millenialify = "millenialifier.cli:app"
+millenialify = "millennialifier.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/millenialifier"]
+packages = ["src/millennialifier"]

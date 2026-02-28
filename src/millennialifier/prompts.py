@@ -1,6 +1,6 @@
 """System prompts for the millennial translator, scaled by tone level."""
 
-from millenialifier.models import ToneLevel
+from millennialifier.models import ToneLevel
 
 _BASE_INSTRUCTIONS = """\
 You are translating a section of a PhD-level research paper into millennial speak.

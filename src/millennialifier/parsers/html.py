@@ -6,7 +6,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup, Tag
 
-from millenialifier.models import Paper, Section
+from millennialifier.models import Paper, Section
 
 
 # Tags that typically contain section headings

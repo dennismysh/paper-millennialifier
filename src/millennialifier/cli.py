@@ -13,10 +13,10 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from millenialifier.models import ToneLevel
-from millenialifier.parsers.fetcher import fetch_paper
-from millenialifier.providers import PROVIDER_INFO
-from millenialifier.translator import translate_paper
+from millennialifier.models import ToneLevel
+from millennialifier.parsers.fetcher import fetch_paper
+from millennialifier.providers import PROVIDER_INFO
+from millennialifier.translator import translate_paper
 
 app = typer.Typer(
     name="millenialify",

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from millenialifier.providers.base import LLMProvider, Message
+from millennialifier.providers.base import LLMProvider, Message
 
 __all__ = ["LLMProvider", "Message", "get_provider", "list_providers", "PROVIDER_INFO"]
 
@@ -76,7 +76,7 @@ def get_provider(name: str) -> LLMProvider:
     """
     if name == "claude":
         try:
-            from millenialifier.providers.anthropic import AnthropicProvider
+            from millennialifier.providers.anthropic import AnthropicProvider
             return AnthropicProvider()
         except ImportError:
             raise ImportError(
@@ -85,7 +85,7 @@ def get_provider(name: str) -> LLMProvider:
 
     if name == "openai":
         try:
-            from millenialifier.providers.openai_compat import openai_provider
+            from millennialifier.providers.openai_compat import openai_provider
             return openai_provider()
         except ImportError:
             raise ImportError(
@@ -94,7 +94,7 @@ def get_provider(name: str) -> LLMProvider:
 
     if name == "gemini":
         try:
-            from millenialifier.providers.google import GeminiProvider
+            from millennialifier.providers.google import GeminiProvider
             return GeminiProvider()
         except ImportError:
             raise ImportError(
@@ -103,7 +103,7 @@ def get_provider(name: str) -> LLMProvider:
 
     if name == "groq":
         try:
-            from millenialifier.providers.openai_compat import groq_provider
+            from millennialifier.providers.openai_compat import groq_provider
             return groq_provider()
         except ImportError:
             raise ImportError(
@@ -112,7 +112,7 @@ def get_provider(name: str) -> LLMProvider:
 
     if name == "openrouter":
         try:
-            from millenialifier.providers.openai_compat import openrouter_provider
+            from millennialifier.providers.openai_compat import openrouter_provider
             return openrouter_provider()
         except ImportError:
             raise ImportError(
@@ -121,7 +121,7 @@ def get_provider(name: str) -> LLMProvider:
 
     if name == "ollama":
         try:
-            from millenialifier.providers.openai_compat import ollama_provider
+            from millennialifier.providers.openai_compat import ollama_provider
             return ollama_provider()
         except ImportError:
             raise ImportError(

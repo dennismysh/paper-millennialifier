@@ -15,7 +15,7 @@ import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ---------------------------------------------------------------------------
-// Prompts (ported from src/millenialifier/prompts.py)
+// Prompts (ported from src/millennialifier/prompts.py)
 // ---------------------------------------------------------------------------
 
 const BASE_INSTRUCTIONS = `\

@@ -10,12 +10,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from millenialifier.models import ToneLevel
-from millenialifier.parsers.fetcher import fetch_paper
-from millenialifier.parsers.html import HtmlParser
-from millenialifier.parsers.pdf import PdfParser
-from millenialifier.providers import PROVIDER_INFO
-from millenialifier.translator import translate_section_stream
+from millennialifier.models import ToneLevel
+from millennialifier.parsers.fetcher import fetch_paper
+from millennialifier.parsers.html import HtmlParser
+from millennialifier.parsers.pdf import PdfParser
+from millennialifier.providers import PROVIDER_INFO
+from millennialifier.translator import translate_section_stream
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _TEMPLATES = _ROOT / "templates"

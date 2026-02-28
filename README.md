@@ -93,7 +93,7 @@ millenialify tones
 ### Web App
 
 ```bash
-uvicorn millenialifier.web:app --reload
+uvicorn millennialifier.web:app --reload
 ```
 
 Then open [http://localhost:8000](http://localhost:8000). The web UI supports URL input and file uploads, provider selection, a tone slider, and real-time streamed translations via server-sent events.
@@ -113,7 +113,7 @@ All levels preserve scientific accuracy — only the delivery changes.
 ## Project Structure
 
 ```
-src/millenialifier/
+src/millennialifier/
 ├── cli.py              # Typer CLI (translate, providers, tones commands)
 ├── web.py              # FastAPI web app with SSE streaming
 ├── models.py           # Data classes: ToneLevel, Section, Paper
