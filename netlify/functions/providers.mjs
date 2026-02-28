@@ -9,7 +9,7 @@
 const PROVIDERS = [
   {
     name: "gemini",
-    description: "Google Gemini \u2014 generous free tier",
+    description: "Google Gemini \u2014 available via Netlify AI Gateway",
     default_model: "gemini-2.0-flash",
     free: true,
     keyEnv: "GEMINI_API_KEY",
