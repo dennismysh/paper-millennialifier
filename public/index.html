@@ -202,6 +202,23 @@
             font-style: italic;
         }
 
+        .export-btn {
+            display: none;
+            margin: 1rem auto;
+            padding: 0.7rem 1.5rem;
+            background: var(--accent2);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .export-btn:hover { opacity: 0.8; }
+
+        .export-btn.visible { display: inline-block; }
+
         .spinner {
             display: inline-block;
             width: 18px;
@@ -264,6 +281,9 @@
             <div class="paper-authors" id="paper-authors"></div>
             <div id="sections"></div>
             <div class="status-bar" id="status-bar"></div>
+            <div style="text-align: center;">
+                <button class="export-btn" id="export-md-btn">Download as Markdown</button>
+            </div>
         </div>
     </div>
 
@@ -371,6 +391,7 @@
             document.getElementById('paper-title').textContent = '';
             document.getElementById('paper-authors').textContent = '';
             sectionsEl.innerHTML = '';
+            document.getElementById('export-md-btn').classList.remove('visible');
             statusBar.innerHTML = '<span class="spinner"></span> Fetching and parsing paper...';
 
             let paper;
@@ -450,6 +471,7 @@
                 }
 
                 statusBar.textContent = 'Translation complete!';
+                document.getElementById('export-md-btn').classList.add('visible');
             } catch (err) {
                 if (err.name === 'AbortError') return;
                 statusBar.textContent = 'Error: ' + err.message;
@@ -457,6 +479,28 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Millennial-ify This Paper';
             }
+        });
+
+        // Export as Markdown
+        document.getElementById('export-md-btn').addEventListener('click', () => {
+            const title = document.getElementById('paper-title').textContent;
+            const authors = document.getElementById('paper-authors').textContent;
+            let md = `# ${title}\n\n`;
+            if (authors) md += `*${authors}*\n\n`;
+
+            document.querySelectorAll('#sections .section-block').forEach(block => {
+                const heading = block.querySelector('h3').textContent;
+                const content = block.querySelector('.content').textContent;
+                md += `## ${heading}\n\n${content}\n\n`;
+            });
+
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (title || 'paper').replace(/[^a-z0-9]+/gi, '_').toLowerCase() + '.md';
+            a.click();
+            URL.revokeObjectURL(url);
         });
     </script>
 </body>
