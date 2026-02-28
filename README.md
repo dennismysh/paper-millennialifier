@@ -1,4 +1,4 @@
-# Paper Millennial-ifier
+# Paper Millennialifier
 
 Translate dense research papers into millennial speak — casual, relatable language while keeping the science intact.
 
