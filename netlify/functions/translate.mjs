@@ -1,8 +1,10 @@
 /**
- * Netlify Function: Translate a single paper section via LLM with SSE streaming.
+ * Netlify Function: Translate a single paper section via Gemini with SSE streaming.
+ *
+ * Uses gemini-2.0-flash exclusively for all translations.
  *
  * Accepts JSON body:
- *   { heading, content, tone (1-5), provider, model? }
+ *   { heading, content, tone (1-5) }
  *
  * Returns: text/event-stream with events:
  *   chunk  — { text }    partial translation text
@@ -10,8 +12,6 @@
  *   error  — { message } something went wrong
  */
 
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 
 // ---------------------------------------------------------------------------
@@ -89,61 +89,14 @@ function buildSectionPrompt(heading, content) {
 // LLM provider streaming
 // ---------------------------------------------------------------------------
 
-async function* streamClaude(systemPrompt, userPrompt, model) {
-  const client = new Anthropic();
-  const stream = client.messages.stream({
-    model: model || "claude-sonnet-4-20250514",
-    max_tokens: 4096,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  });
-
-  for await (const event of stream) {
-    if (
-      event.type === "content_block_delta" &&
-      event.delta?.type === "text_delta"
-    ) {
-      yield event.delta.text;
-    }
-  }
-}
-
-async function* streamOpenAICompat(
-  systemPrompt,
-  userPrompt,
-  model,
-  baseURL,
-  apiKey
-) {
-  const client = new OpenAI({
-    baseURL: baseURL || undefined,
-    apiKey: apiKey || "not-needed",
-  });
-
-  const stream = await client.chat.completions.create({
-    model,
-    max_tokens: 4096,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    stream: true,
-  });
-
-  for await (const chunk of stream) {
-    const text = chunk.choices[0]?.delta?.content;
-    if (text) yield text;
-  }
-}
-
-async function* streamGemini(systemPrompt, userPrompt, model) {
+async function* streamGemini(systemPrompt, userPrompt) {
   // Netlify AI Gateway auto-injects GEMINI_API_KEY; fall back to manual key
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
   });
 
   const response = await ai.models.generateContentStream({
-    model: model || "gemini-2.0-flash",
+    model: "gemini-2.0-flash",
     contents: userPrompt,
     config: {
       systemInstruction: systemPrompt,
@@ -157,67 +110,12 @@ async function* streamGemini(systemPrompt, userPrompt, model) {
   }
 }
 
-// Provider registry
-const PROVIDERS = {
-  claude: {
-    getStream: (sys, usr, model) => streamClaude(sys, usr, model),
-    keyEnv: "ANTHROPIC_API_KEY",
-  },
-  openai: {
-    getStream: (sys, usr, model) =>
-      streamOpenAICompat(
-        sys,
-        usr,
-        model || "gpt-4o",
-        undefined,
-        process.env.OPENAI_API_KEY
-      ),
-    keyEnv: "OPENAI_API_KEY",
-  },
-  gemini: {
-    getStream: (sys, usr, model) => streamGemini(sys, usr, model),
-    keyEnv: "GEMINI_API_KEY",
-    altKeyEnv: "GOOGLE_API_KEY",
-  },
-  groq: {
-    getStream: (sys, usr, model) =>
-      streamOpenAICompat(
-        sys,
-        usr,
-        model || "llama-3.3-70b-versatile",
-        "https://api.groq.com/openai/v1",
-        process.env.GROQ_API_KEY
-      ),
-    keyEnv: "GROQ_API_KEY",
-  },
-  openrouter: {
-    getStream: (sys, usr, model) =>
-      streamOpenAICompat(
-        sys,
-        usr,
-        model || "meta-llama/llama-3.3-70b-instruct:free",
-        "https://openrouter.ai/api/v1",
-        process.env.OPENROUTER_API_KEY
-      ),
-    keyEnv: "OPENROUTER_API_KEY",
-  },
-};
-
 // ---------------------------------------------------------------------------
 // Friendly error messages
 // ---------------------------------------------------------------------------
 
-const KEY_ENV_NAMES = {
-  claude: "ANTHROPIC_API_KEY",
-  openai: "OPENAI_API_KEY",
-  gemini: "GEMINI_API_KEY or GOOGLE_API_KEY",
-  groq: "GROQ_API_KEY",
-  openrouter: "OPENROUTER_API_KEY",
-};
-
-function friendlyError(provider, err) {
+function friendlyError(err) {
   const raw = (err.message || "").toLowerCase();
-  const envHint = KEY_ENV_NAMES[provider] ? ` (${KEY_ENV_NAMES[provider]})` : "";
 
   if (
     raw.includes("api key not valid") ||
@@ -226,23 +124,23 @@ function friendlyError(provider, err) {
     raw.includes("401")
   ) {
     return (
-      `Your ${provider} API key${envHint} is invalid. ` +
+      "Your Gemini API key (GEMINI_API_KEY or GOOGLE_API_KEY) is invalid. " +
       "Please double-check the key in your Netlify site environment variables."
     );
   }
   if (raw.includes("quota") || raw.includes("rate limit") || raw.includes("429")) {
     return (
-      `Rate limit or quota exceeded for ${provider}. ` +
-      "Please wait a moment and try again, or switch to another provider."
+      "Rate limit or quota exceeded for Gemini. " +
+      "Please wait a moment and try again."
     );
   }
   if (raw.includes("not found") || raw.includes("404")) {
     return (
-      `The requested model was not found on ${provider}. ` +
-      "Please check the model name or leave it blank for the default."
+      "The Gemini model was not found. " +
+      "Please check your Gemini API configuration."
     );
   }
-  return `Error from ${provider}: ${err.message}`;
+  return `Error from Gemini: ${err.message}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,7 +163,7 @@ export default async (request) => {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { heading, content, tone, provider: requestedProvider, model } = body;
+  const { heading, content, tone } = body;
 
   if (!content) {
     return Response.json(
@@ -274,26 +172,11 @@ export default async (request) => {
     );
   }
 
-  // Auto-select the first available provider if none is specified
-  const provider = requestedProvider || Object.keys(PROVIDERS).find(name => {
-    const cfg = PROVIDERS[name];
-    return process.env[cfg.keyEnv] || (cfg.altKeyEnv && process.env[cfg.altKeyEnv]);
-  }) || Object.keys(PROVIDERS)[0];
-
-  const providerConfig = PROVIDERS[provider];
-  if (!providerConfig) {
-    return Response.json(
-      { error: `Unknown provider: ${provider}. Available: ${Object.keys(PROVIDERS).join(", ")}` },
-      { status: 400 }
-    );
-  }
-
-  const hasKey = process.env[providerConfig.keyEnv] ||
-    (providerConfig.altKeyEnv && process.env[providerConfig.altKeyEnv]);
-  if (providerConfig.keyEnv && !hasKey) {
+  const hasKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!hasKey) {
     return Response.json(
       {
-        error: `Missing API key: ${providerConfig.keyEnv}. Add it in your Netlify site settings under Environment Variables. Providers like Claude, OpenAI, and Gemini may be available via Netlify AI Gateway without manual configuration.`,
+        error: "Missing API key: GEMINI_API_KEY or GOOGLE_API_KEY. Add it in your Netlify site settings under Environment Variables.",
       },
       { status: 400 }
     );
@@ -316,14 +199,14 @@ export default async (request) => {
   // Run the LLM streaming in the background
   (async () => {
     try {
-      const stream = providerConfig.getStream(systemPrompt, userPrompt, model);
+      const stream = streamGemini(systemPrompt, userPrompt);
       for await (const chunk of stream) {
         await writeSSE("chunk", { text: chunk });
       }
       await writeSSE("done", {});
     } catch (err) {
       console.error("Translation error:", err);
-      await writeSSE("error", { message: friendlyError(provider, err) });
+      await writeSSE("error", { message: friendlyError(err) });
     } finally {
       await writer.close();
     }
