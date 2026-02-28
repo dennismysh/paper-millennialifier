@@ -107,18 +107,22 @@ async def translate(
             },
         )
 
-        for i, section in enumerate(paper.all_sections()):
-            yield _sse("section_start", {"index": i, "heading": section.heading})
+        try:
+            for i, section in enumerate(paper.all_sections()):
+                yield _sse("section_start", {"index": i, "heading": section.heading})
 
-            async for chunk in translate_section_stream(
-                section,
-                tone=tone_level,
-                model=model_override,
-                provider_name=provider,
-            ):
-                yield _sse("chunk", {"index": i, "text": chunk})
+                async for chunk in translate_section_stream(
+                    section,
+                    tone=tone_level,
+                    model=model_override,
+                    provider_name=provider,
+                ):
+                    yield _sse("chunk", {"index": i, "text": chunk})
 
-            yield _sse("section_done", {"index": i, "heading": section.heading})
+                yield _sse("section_done", {"index": i, "heading": section.heading})
+        except Exception as exc:
+            yield _sse("error", {"message": _friendly_error(provider, exc)})
+            return
 
         yield _sse("done", {})
 
@@ -132,3 +136,32 @@ def _sse(event: str, data: dict) -> str:
 
 async def _error_stream(message: str):
     yield _sse("error", {"message": message})
+
+
+def _friendly_error(provider_name: str, exc: Exception) -> str:
+    """Turn a raw SDK exception into a human-readable message."""
+    raw = str(exc).lower()
+    info = PROVIDER_INFO.get(provider_name)
+    if info and info.api_key_env:
+        env_names = info.api_key_env if isinstance(info.api_key_env, list) else [info.api_key_env]
+        env_hint = f" ({' or '.join(env_names)})"
+    else:
+        env_hint = ""
+
+    if "api key not valid" in raw or "invalid api key" in raw or "unauthorized" in raw or "401" in raw:
+        return (
+            f"Your {provider_name} API key{env_hint} is invalid. "
+            "Please double-check the key and try again."
+        )
+    if "quota" in raw or "rate limit" in raw or "429" in raw:
+        return (
+            f"Rate limit or quota exceeded for {provider_name}. "
+            "Please wait a moment and try again, or switch to another provider."
+        )
+    if "not found" in raw or "404" in raw:
+        return (
+            f"The requested model was not found on {provider_name}. "
+            "Please check the model name or leave it blank for the default."
+        )
+    # Fall back to the raw message, but strip the SDK prefix noise
+    return f"Error from {provider_name}: {exc}"
