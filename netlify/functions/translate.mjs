@@ -265,7 +265,7 @@ export default async (request) => {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { heading, content, tone, provider, model } = body;
+  const { heading, content, tone, provider: requestedProvider, model } = body;
 
   if (!content) {
     return Response.json(
@@ -273,6 +273,12 @@ export default async (request) => {
       { status: 400 }
     );
   }
+
+  // Auto-select the first available provider if none is specified
+  const provider = requestedProvider || Object.keys(PROVIDERS).find(name => {
+    const cfg = PROVIDERS[name];
+    return process.env[cfg.keyEnv] || (cfg.altKeyEnv && process.env[cfg.altKeyEnv]);
+  }) || Object.keys(PROVIDERS)[0];
 
   const providerConfig = PROVIDERS[provider];
   if (!providerConfig) {
