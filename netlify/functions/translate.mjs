@@ -12,7 +12,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 // ---------------------------------------------------------------------------
 // Prompts (ported from src/millennialifier/prompts.py)
@@ -137,15 +137,22 @@ async function* streamOpenAICompat(
 }
 
 async function* streamGemini(systemPrompt, userPrompt, model) {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
-  const genModel = genAI.getGenerativeModel({
-    model: model || "gemini-2.0-flash",
-    systemInstruction: systemPrompt,
+  // Netlify AI Gateway auto-injects GEMINI_API_KEY; fall back to manual key
+  const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
   });
 
-  const result = await genModel.generateContentStream(userPrompt);
-  for await (const chunk of result.stream) {
-    const text = chunk.text();
+  const response = await ai.models.generateContentStream({
+    model: model || "gemini-2.0-flash",
+    contents: userPrompt,
+    config: {
+      systemInstruction: systemPrompt,
+      maxOutputTokens: 4096,
+    },
+  });
+
+  for await (const chunk of response) {
+    const text = chunk.text;
     if (text) yield text;
   }
 }
@@ -280,7 +287,7 @@ export default async (request) => {
   if (providerConfig.keyEnv && !hasKey) {
     return Response.json(
       {
-        error: `Missing API key: ${providerConfig.keyEnv}. Add it in your Netlify site settings under Environment Variables. Providers like Claude and OpenAI may be available via Netlify AI inference without manual configuration.`,
+        error: `Missing API key: ${providerConfig.keyEnv}. Add it in your Netlify site settings under Environment Variables. Providers like Claude, OpenAI, and Gemini may be available via Netlify AI Gateway without manual configuration.`,
       },
       { status: 400 }
     );
