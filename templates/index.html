@@ -313,16 +313,16 @@
                 <div class="field-group">
                     <label>LLM Provider</label>
                     <div class="provider-pills" id="provider-pills">
-                        <button type="button" class="provider-pill active" data-provider="claude">Claude</button>
+                        <button type="button" class="provider-pill" data-provider="claude">Claude</button>
                         <button type="button" class="provider-pill" data-provider="openai">OpenAI</button>
-                        <button type="button" class="provider-pill" data-provider="gemini">Gemini <span class="free-badge">FREE</span></button>
+                        <button type="button" class="provider-pill active" data-provider="gemini">Gemini <span class="free-badge">FREE</span></button>
                         <button type="button" class="provider-pill" data-provider="groq">Groq <span class="free-badge">FREE</span></button>
                         <button type="button" class="provider-pill" data-provider="openrouter">OpenRouter <span class="free-badge">FREE</span></button>
                         <button type="button" class="provider-pill" data-provider="ollama">Ollama <span class="free-badge">FREE</span></button>
                     </div>
                     <input type="text" name="model" id="model-input" class="model-input"
                            placeholder="Model override (leave blank for default)">
-                    <div class="model-hint" id="model-hint">Default: claude-sonnet-4-20250514</div>
+                    <div class="model-hint" id="model-hint">Default: gemini-2.0-flash</div>
                 </div>
 
                 <div class="tone-group">
@@ -363,7 +363,7 @@
             ollama: 'llama3.1',
         };
 
-        let selectedProvider = 'claude';
+        let selectedProvider = 'gemini';
 
         // Tabs
         document.querySelectorAll('.tab').forEach(tab => {
