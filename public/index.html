@@ -160,6 +160,27 @@
             vertical-align: middle;
         }
 
+        .provider-pill.unavailable {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+
+        .provider-pill.unavailable:hover {
+            border-color: var(--accent2);
+            color: var(--text-dim);
+        }
+
+        .provider-pill .key-badge {
+            font-size: 0.6rem;
+            background: #7b2d2d;
+            color: #f0a0a0;
+            padding: 0.1rem 0.35rem;
+            border-radius: 8px;
+            margin-left: 0.3rem;
+            vertical-align: middle;
+        }
+
         .model-input {
             font-size: 0.85rem;
             padding: 0.5rem 0.75rem;
@@ -318,15 +339,11 @@
                 <div class="field-group">
                     <label>LLM Provider</label>
                     <div class="provider-pills" id="provider-pills">
-                        <button type="button" class="provider-pill active" data-provider="claude">Claude</button>
-                        <button type="button" class="provider-pill" data-provider="openai">OpenAI</button>
-                        <button type="button" class="provider-pill" data-provider="gemini">Gemini <span class="free-badge">FREE</span></button>
-                        <button type="button" class="provider-pill" data-provider="groq">Groq <span class="free-badge">FREE</span></button>
-                        <button type="button" class="provider-pill" data-provider="openrouter">OpenRouter <span class="free-badge">FREE</span></button>
+                        <!-- Populated dynamically from /api/providers -->
                     </div>
                     <input type="text" name="model" id="model-input" class="model-input"
                            placeholder="Model override (leave blank for default)">
-                    <div class="model-hint" id="model-hint">Default: claude-sonnet-4-20250514</div>
+                    <div class="model-hint" id="model-hint">Loading providers...</div>
                 </div>
 
                 <div class="tone-group">
@@ -346,11 +363,9 @@
                 <button type="submit" id="submit-btn">Millennial-ify This Paper</button>
             </form>
 
-            <div class="env-hint">
-                Set your LLM API keys in Netlify's site environment variables:
-                <code>ANTHROPIC_API_KEY</code>, <code>OPENAI_API_KEY</code>,
-                <code>GOOGLE_API_KEY</code>, <code>GROQ_API_KEY</code>, or
-                <code>OPENROUTER_API_KEY</code>
+            <div class="env-hint" id="env-hint">
+                Providers marked <span style="color:#f0a0a0">KEY</span> need an API key
+                set in Netlify site environment variables to work.
             </div>
         </div>
 
@@ -364,15 +379,10 @@
 
     <script>
         const TONE_NAMES = { 1: 'Light', 2: 'Moderate', 3: 'Balanced', 4: 'Heavy', 5: 'UNHINGED' };
-        const DEFAULT_MODELS = {
-            claude: 'claude-sonnet-4-20250514',
-            openai: 'gpt-4o',
-            gemini: 'gemini-2.0-flash',
-            groq: 'llama-3.3-70b-versatile',
-            openrouter: 'meta-llama/llama-3.3-70b-instruct:free',
-        };
+        const DEFAULT_MODELS = {};
+        let providersData = [];
 
-        let selectedProvider = 'claude';
+        let selectedProvider = null;
         let abortController = null;
 
         // Tabs
@@ -385,17 +395,70 @@
             });
         });
 
-        // Provider pills
-        document.querySelectorAll('.provider-pill').forEach(pill => {
-            pill.addEventListener('click', () => {
-                document.querySelectorAll('.provider-pill').forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                selectedProvider = pill.dataset.provider;
-                document.getElementById('model-hint').textContent =
-                    'Default: ' + DEFAULT_MODELS[selectedProvider];
-                document.getElementById('model-input').value = '';
+        // Fetch providers from API and build pills dynamically
+        (async function loadProviders() {
+            const pillsContainer = document.getElementById('provider-pills');
+            const modelHint = document.getElementById('model-hint');
+            const envHint = document.getElementById('env-hint');
+
+            try {
+                const resp = await fetch('/api/providers');
+                providersData = await resp.json();
+            } catch {
+                modelHint.textContent = 'Failed to load providers.';
+                return;
+            }
+
+            // Build DEFAULT_MODELS map
+            providersData.forEach(p => { DEFAULT_MODELS[p.name] = p.default_model; });
+
+            // Pick first available provider as default, fall back to first overall
+            const firstAvailable = providersData.find(p => p.available) || providersData[0];
+            selectedProvider = firstAvailable?.name || 'claude';
+
+            // Build provider pill buttons
+            pillsContainer.innerHTML = '';
+            const hasUnavailable = providersData.some(p => !p.available);
+
+            providersData.forEach(p => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.provider = p.name;
+
+                // Display name (capitalize first letter)
+                const displayName = p.name.charAt(0).toUpperCase() + p.name.slice(1);
+                let label = displayName;
+                if (p.free) label += ' <span class="free-badge">FREE</span>';
+                if (!p.available) label += ' <span class="key-badge">KEY</span>';
+                btn.innerHTML = label;
+
+                btn.className = 'provider-pill';
+                if (p.name === selectedProvider) btn.classList.add('active');
+                if (!p.available) btn.classList.add('unavailable');
+
+                btn.addEventListener('click', () => {
+                    if (!p.available) {
+                        alert(`${displayName} requires an API key.\n\nSet ${p.keyEnv} in your Netlify site environment variables.`);
+                        return;
+                    }
+                    document.querySelectorAll('.provider-pill').forEach(el => el.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedProvider = p.name;
+                    document.getElementById('model-hint').textContent =
+                        'Default: ' + DEFAULT_MODELS[selectedProvider];
+                    document.getElementById('model-input').value = '';
+                });
+
+                pillsContainer.appendChild(btn);
             });
-        });
+
+            modelHint.textContent = 'Default: ' + (DEFAULT_MODELS[selectedProvider] || '');
+
+            // Update env hint based on what's unavailable
+            if (!hasUnavailable) {
+                envHint.style.display = 'none';
+            }
+        })();
 
         // Tone slider
         const toneSlider = document.getElementById('tone-slider');

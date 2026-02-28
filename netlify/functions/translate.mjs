@@ -235,7 +235,7 @@ export default async (request) => {
   if (providerConfig.keyEnv && !process.env[providerConfig.keyEnv]) {
     return Response.json(
       {
-        error: `Missing API key. Set ${providerConfig.keyEnv} in your Netlify site environment variables.`,
+        error: `Missing API key: ${providerConfig.keyEnv}. Add it in your Netlify site settings under Environment Variables. Providers like Claude and OpenAI may be available via Netlify AI inference without manual configuration.`,
       },
       { status: 400 }
     );
