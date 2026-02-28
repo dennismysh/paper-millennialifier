@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from pathlib import Path
 
 import typer
@@ -11,11 +10,9 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.table import Table
 
 from millennialifier.models import ToneLevel
 from millennialifier.parsers.fetcher import fetch_paper
-from millennialifier.providers import PROVIDER_INFO
 from millennialifier.translator import translate_paper
 
 app = typer.Typer(
@@ -50,18 +47,6 @@ def translate(
         max=5,
         help="Millennial intensity: 1=light, 2=moderate, 3=balanced, 4=heavy, 5=unhinged.",
     ),
-    provider: str = typer.Option(
-        "claude",
-        "--provider",
-        "-p",
-        help="LLM provider: claude, openai, gemini, groq, openrouter, ollama.",
-    ),
-    model: str | None = typer.Option(
-        None,
-        "--model",
-        "-m",
-        help="Model ID override (uses provider default if omitted).",
-    ),
     output: Path | None = typer.Option(
         None,
         "--output",
@@ -72,28 +57,22 @@ def translate(
     """Translate a research paper into millennial speak."""
     tone_level = ToneLevel(tone)
 
-    # Resolve display model name
-    info = PROVIDER_INFO.get(provider)
-    display_model = model or (info.default_model if info else "?")
-
     console.print(
         Panel(
             f"[bold]Paper Millennial-ifier[/bold]\n"
             f"Source: {source}\n"
-            f"Provider: {provider} ({display_model})\n"
+            f"Model: gemini-2.0-flash\n"
             f"Tone: {_tone_name(tone_level)} ({tone}/5)",
             border_style="cyan",
         )
     )
 
-    asyncio.run(_run_translation(source, tone_level, provider, model, output))
+    asyncio.run(_run_translation(source, tone_level, output))
 
 
 async def _run_translation(
     source: str,
     tone: ToneLevel,
-    provider_name: str,
-    model: str | None,
     output: Path | None,
 ) -> None:
     # Parse
@@ -130,8 +109,6 @@ async def _run_translation(
         paper = await translate_paper(
             paper,
             tone=tone,
-            model=model,
-            provider_name=provider_name,
             on_section_start=on_start,
             on_section_done=on_done,
         )
@@ -157,36 +134,6 @@ async def _run_translation(
     else:
         console.print()
         console.print(Markdown(result))
-
-
-@app.command()
-def providers() -> None:
-    """List available LLM providers and their configuration status."""
-    table = Table(title="Available Providers")
-    table.add_column("Name", style="cyan", no_wrap=True)
-    table.add_column("Description")
-    table.add_column("Default Model", style="dim")
-    table.add_column("Free?", justify="center")
-    table.add_column("Status", justify="center")
-
-    for info in PROVIDER_INFO.values():
-        # Check if configured
-        if info.api_key_env is None:
-            status = "[green]Ready[/green]"
-        elif os.environ.get(info.api_key_env):
-            status = "[green]Configured[/green]"
-        else:
-            status = f"[yellow]Set {info.api_key_env}[/yellow]"
-
-        free = "[green]Yes[/green]" if info.free else "[dim]No[/dim]"
-
-        table.add_row(info.name, info.description, info.default_model, free, status)
-
-    console.print(table)
-    console.print(
-        "\n[dim]Use --provider/-p with the translate command, e.g.:[/dim]"
-        "\n  millenialify translate paper.pdf --provider groq"
-    )
 
 
 @app.command()
