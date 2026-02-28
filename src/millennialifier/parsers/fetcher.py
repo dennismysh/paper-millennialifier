@@ -7,9 +7,9 @@ from pathlib import Path
 
 import httpx
 
-from millenialifier.models import Paper
-from millenialifier.parsers.html import HtmlParser
-from millenialifier.parsers.pdf import PdfParser
+from millennialifier.models import Paper
+from millennialifier.parsers.html import HtmlParser
+from millennialifier.parsers.pdf import PdfParser
 
 # arXiv abstract page: https://arxiv.org/abs/2301.12345
 _ARXIV_ABS_RE = re.compile(r"arxiv\.org/abs/([\w.]+)")

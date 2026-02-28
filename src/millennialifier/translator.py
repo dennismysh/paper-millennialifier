@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-from millenialifier.models import Paper, Section, ToneLevel
-from millenialifier.prompts import build_section_prompt, build_system_prompt
-from millenialifier.providers import LLMProvider, Message, get_provider
+from millennialifier.models import Paper, Section, ToneLevel
+from millennialifier.prompts import build_section_prompt, build_system_prompt
+from millennialifier.providers import LLMProvider, Message, get_provider
 
 
 DEFAULT_PROVIDER = "claude"
