@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "paper-millenialifier"
+name = "paper-millennialifier"
 version = "0.2.0"
 description = "Translate research papers into millennial speak"
 requires-python = ">=3.10"

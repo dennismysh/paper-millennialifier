@@ -80,7 +80,7 @@ def get_provider(name: str) -> LLMProvider:
             return AnthropicProvider()
         except ImportError:
             raise ImportError(
-                "Anthropic SDK not installed. Run: pip install paper-millenialifier[claude]"
+                "Anthropic SDK not installed. Run: pip install paper-millennialifier[claude]"
             )
 
     if name == "openai":
@@ -89,7 +89,7 @@ def get_provider(name: str) -> LLMProvider:
             return openai_provider()
         except ImportError:
             raise ImportError(
-                "OpenAI SDK not installed. Run: pip install paper-millenialifier[openai]"
+                "OpenAI SDK not installed. Run: pip install paper-millennialifier[openai]"
             )
 
     if name == "gemini":
@@ -98,7 +98,7 @@ def get_provider(name: str) -> LLMProvider:
             return GeminiProvider()
         except ImportError:
             raise ImportError(
-                "Google GenAI SDK not installed. Run: pip install paper-millenialifier[gemini]"
+                "Google GenAI SDK not installed. Run: pip install paper-millennialifier[gemini]"
             )
 
     if name == "groq":
@@ -107,7 +107,7 @@ def get_provider(name: str) -> LLMProvider:
             return groq_provider()
         except ImportError:
             raise ImportError(
-                "OpenAI SDK not installed (used for Groq). Run: pip install paper-millenialifier[openai]"
+                "OpenAI SDK not installed (used for Groq). Run: pip install paper-millennialifier[openai]"
             )
 
     if name == "openrouter":
@@ -116,7 +116,7 @@ def get_provider(name: str) -> LLMProvider:
             return openrouter_provider()
         except ImportError:
             raise ImportError(
-                "OpenAI SDK not installed (used for OpenRouter). Run: pip install paper-millenialifier[openai]"
+                "OpenAI SDK not installed (used for OpenRouter). Run: pip install paper-millennialifier[openai]"
             )
 
     if name == "ollama":
@@ -125,7 +125,7 @@ def get_provider(name: str) -> LLMProvider:
             return ollama_provider()
         except ImportError:
             raise ImportError(
-                "OpenAI SDK not installed (used for Ollama). Run: pip install paper-millenialifier[openai]"
+                "OpenAI SDK not installed (used for Ollama). Run: pip install paper-millennialifier[openai]"
             )
 
     raise ValueError(
